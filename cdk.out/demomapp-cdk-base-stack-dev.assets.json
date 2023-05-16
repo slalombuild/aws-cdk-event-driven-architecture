@@ -1,0 +1,20 @@
+{
+  "version": "30.0.0",
+  "files": {
+    "e3238a7ff2ab3b0a23e849632b919ca54e6091d7f5acb541e5c8d590f3739d47": {
+      "source": {
+        "path": "demomapp-cdk-base-stack-dev.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "current_account-ca-central-1": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-ca-central-1",
+          "objectKey": "e3238a7ff2ab3b0a23e849632b919ca54e6091d7f5acb541e5c8d590f3739d47.json",
+          "region": "ca-central-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-ca-central-1"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}
