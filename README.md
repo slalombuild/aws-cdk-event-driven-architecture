@@ -42,7 +42,7 @@ Clone repository and change to project directory
 
 ```bash
 cd /path/to/repo
-git clone https://arpits2024@bitbucket.org/slalom-consulting/aws-cdk-event-driven-architecture.git #replace it with github https url
+git clone https://github.com/slalombuild/aws-cdk-event-driven-architecture.git  #replace it with github https url
 cd aws-cdk-event-driven-architecture
 ```
 
@@ -126,7 +126,7 @@ export class LambdaIamStack extends cdk.Stack {
 Typescript file under bin folder is the entrypoint of the CDK application. It will load the stack we are defining
 
 - Sample  bin/cdk-workshop.ts
-![image info](./screenshot/sample-project-bin.ts.png)
+![image info](./screenshot/sample-project-bin-ts.png)
 
 - Next is to update the main app and create the LambdaIamStack so that it invokes the stack we create above.
 - Update with below code. Add below code to bin/pe-dojo-app.ts
