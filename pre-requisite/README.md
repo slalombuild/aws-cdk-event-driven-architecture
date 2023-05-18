@@ -228,4 +228,4 @@ CDK init - use cdk init to create a new TypeScript CDK project.
 ```
 cdk init sample-app --language typescript
 ```
-This will help to get started with default CDK typescript prject directory sctucture.
+This will help to get started with default CDK typescript prject directory structure.
