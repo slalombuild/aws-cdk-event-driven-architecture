@@ -36,7 +36,112 @@ cd aws-cdk-event-driven-architecture
 
 `Note: Please navigate to pre-requisite directory and refer readme for installation and setup before proceeding.`
 
-## Setting up Stage1 — Creating S3 bucket
+## Setting up Stage 1 — Creating Lambda and IAM Dependencies
+- Since now you are familiar enough with CDK so you can start building the solution putting more AWS resources together. However, if you are already experienced in using cdk, you can skip to coding section.
+
+- First, open the workspace where you created S3 from Stage 1 and create a file under lib/lambda-iam-stack.ts with the following content:
+
+### Componets / AWS Services uses
+
+- Lambda
+- IAM
+- S3
+- Systems parameter
+
+### Code / Configuration update for Stage 1
+
+- Go to the lib/lambda-iam-stack.ts file which you created initially.
+- Below is the reference code to create lambda and it's IAM permissions using CDK.
+```
+import * as cdk from 'aws-cdk-lib';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import { Construct } from 'constructs';
+import * as path from 'path';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
+
+export class LambdaIamStack extends cdk.Stack {
+  public readonly bucketName: string;
+  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+    super(scope, id, props);
+
+    const s3bucketarn = ssm.StringParameter.valueForStringParameter(this, '/dev/s3bucket');
+    const bucketParamName = ssm.StringParameter.valueForStringParameter(this, '/dev/s3bucketname');
+    this.bucketName = bucketParamName
+
+    const fn = new lambda.Function(this, 'S3EventNotificationsLambda', {
+      runtime: lambda.Runtime.NODEJS_14_X,
+      functionName: 'S3EventNotificationsManager',
+      handler: 'manage-s3-event-notifications.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda')),
+      timeout: cdk.Duration.seconds(300)
+    });
+
+    fn.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ['s3:GetBucketNotification', 's3:PutBucketNotification'],
+        effect: iam.Effect.ALLOW,
+        resources: [ s3bucketarn ]
+      })
+    );
+
+    const lambdaArn = cdk.Arn.format({
+      service: 'lambda',
+      resource: 'S3EventNotificationsManager'
+    }, this);
+
+    new ssm.StringParameter(this, 'lambda-arn-Parameter', {
+      allowedPattern: '.*',
+      description: 'lambda bucket ARN',
+      parameterName: '/dev/lambda',
+      stringValue: lambdaArn,
+
+      tier: ssm.ParameterTier.ADVANCED,
+    });
+  }
+}
+```
+- Next is to update the main app and create the LambdaIamStack so that it invokes the stack we create above.
+- Add below code to bin/pe-dojo-app.ts
+```
+const sharedStack = new LambdaIamStack(app, 'LambdaIamStack', {
+  description: "Creates lambda function and IAM role and stores lambda arn into SSM"
+});
+```
+
+### Steps to deploy / Provision resources for Stage 1
+
+`Note: Before we move on to deploy command steps, cdk will search for cdk.json inorder to run any cdk deploy commands so please make sure you are in the right directory.`
+
+To build this app, you need to be in this example's root folder. Then run the following command.
+```
+npm install -g aws-cdk
+npm install
+```
+To synthesize your application and check the cloudformation stack which it is going to create, run the following command.
+```
+cdk synth <stack name>
+```
+To deploy your application, run the following
+```
+cdk deploy <stack name> -r <your role arn>
+```
+
+![image info](./screenshot/lambda-deploy.png)
+
+### Output
+
+Go to AWS console and check if the cloudformation stack is successfully deployed, Also check if all the resources which we expect to create are created successfully.
+- Lambda
+- S3
+- IAM permissions for lambda
+
+![image info](./screenshot/lambda-stack-stage2.png)
+
+![image info](./screenshot/lambda-stage2.png)
+
+
+## Setting up Stage 2 — Creating S3 bucket
 
 The architecture diagram you saw above is divided into four stages. Each stage we deploy certain AWS services/components of our architecture.
 Services under each stage will be deployed through respective CDK stack or added in the existing stack.
@@ -47,7 +152,7 @@ Services under each stage will be deployed through respective CDK stack or added
 - S3 bucket with bucket properties.
 - SSM parameter for storing config.
 
-### Code / Configuration for stage1 
+### Code / Configuration for stage 2 
 This will create s3 bucket and first stack with AWS CDK
 ```
 import {CfnOutput } from 'aws-cdk-lib';
@@ -120,7 +225,7 @@ cdk bootstrap --profile <name of your AWS profile>
 validate the CDK bootstrap resources details by checking the CDKToolkit stack using AWS Console
 ![image info](./screenshot/cdk-toolkit-stage1.png) 
 
-### Steps to deploy / Provision resources for Stage1
+### Steps to deploy / Provision resources for Stage 2
 
 `Note: Before we move on to deploy command steps, cdk will search for cdk.json inorder to run any cdk deploy commands so please make sure you are in the right directory.`
 
@@ -146,122 +251,19 @@ cdk deploy <stack name> -r <your role arn>
 
 ![image info](./screenshot/cdk-deploy-command-stage1.png) 
 
-### Stage1 Output
+### Stage 2 Output
 
 Validate the CDK stack deployment by checking the CloudFormation stack from AWS Console
 
 ![image info](./screenshot/s3-CF-stage1.png) 
 
-As part of stage1 deployment we have deployed 
+As part of stage 2 deployment we have deployed 
 - S3 stack
 - Output of S3 bucket name & ARN save to parameter store
 
 ![image info](./screenshot/s3-CF-stack-stage1.png) 
 
 
-## Setting up Stage2 — Creating Lambda and IAM Dependencies
-- Since now you are familiar enough with CDK so you can start building the solution putting more AWS resources together. However, if you are already experienced in using cdk, you can skip to coding section.
-
-- First, open the workspace where you created S3 from Stage 1 and create a file under lib/lambda-iam-stack.ts with the following content:
-
-### Componets / AWS Services uses
-
-- Lambda
-- IAM
-- S3
-- Systems parameter
-
-### Code / Configuration update for Stage2
-
-- Go to the lib/lambda-iam-stack.ts file which you created initially.
-- Below is the reference code to create lambda and it's IAM permissions using CDK.
-```
-import * as cdk from 'aws-cdk-lib';
-import * as lambda from 'aws-cdk-lib/aws-lambda';
-import * as iam from 'aws-cdk-lib/aws-iam';
-import { Construct } from 'constructs';
-import * as path from 'path';
-import * as ssm from 'aws-cdk-lib/aws-ssm';
-
-export class LambdaIamStack extends cdk.Stack {
-  public readonly bucketName: string;
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
-    super(scope, id, props);
-
-    const s3bucketarn = ssm.StringParameter.valueForStringParameter(this, '/dev/s3bucket');
-    const bucketParamName = ssm.StringParameter.valueForStringParameter(this, '/dev/s3bucketname');
-    this.bucketName = bucketParamName
-
-    const fn = new lambda.Function(this, 'S3EventNotificationsLambda', {
-      runtime: lambda.Runtime.NODEJS_14_X,
-      functionName: 'S3EventNotificationsManager',
-      handler: 'manage-s3-event-notifications.handler',
-      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda')),
-      timeout: cdk.Duration.seconds(300)
-    });
-
-    fn.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: ['s3:GetBucketNotification', 's3:PutBucketNotification'],
-        effect: iam.Effect.ALLOW,
-        resources: [ s3bucketarn ]
-      })
-    );
-
-    const lambdaArn = cdk.Arn.format({
-      service: 'lambda',
-      resource: 'S3EventNotificationsManager'
-    }, this);
-
-    new ssm.StringParameter(this, 'lambda-arn-Parameter', {
-      allowedPattern: '.*',
-      description: 'lambda bucket ARN',
-      parameterName: '/dev/lambda',
-      stringValue: lambdaArn,
-
-      tier: ssm.ParameterTier.ADVANCED,
-    });
-  }
-}
-```
-- Next is to update the main app and create the LambdaIamStack so that it invokes the stack we create above.
-- Add below code to bin/pe-dojo-app.ts
-```
-const sharedStack = new LambdaIamStack(app, 'LambdaIamStack', {
-  description: "Creates lambda function and IAM role and stores lambda arn into SSM"
-});
-```
-
-### Steps to deploy / Provision resources for Stage2
-
-`Note: Before we move on to deploy command steps, cdk will search for cdk.json inorder to run any cdk deploy commands so please make sure you are in the right directory.`
-
-To build this app, you need to be in this example's root folder. Then run the following command.
-```
-npm install -g aws-cdk
-npm install
-```
-To synthesize your application and check the cloudformation stack which it is going to create, run the following command.
-```
-cdk synth <stack name>
-```
-To deploy your application, run the following
-```
-cdk deploy <stack name> -r <your role arn>
-```
-
-![image info](./screenshot/lambda-deploy.png)
-
-### Output
-
-Go to AWS console and check if the cloudformation stack is successfully deployed, Also check if all the resources which we expect to create are created successfully.
-- Lambda
-- S3
-- IAM permissions for lambda
-
-![image info](./screenshot/lambda-stack-stage2.png)
-
-![image info](./screenshot/lambda-stage2.png)
 
 ## Setting up Stage3 — Adding S3 Trigger for Lambda
 - First, open the workspace where you created S3 from Stage 1 and within the same file under lib/s3-bucket.ts we will add s3 trigger code.
