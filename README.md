@@ -25,7 +25,19 @@ https://www.meetup.com/slalom-tech-talks/events/292976013/?utm_medium=referral&u
   These are couple of use cases but same can be modified to multiple different use cases.
 
 ## Getting Started
+- Option 1 
 
+Start with Sample Typescript CDK project which was created as part of pre-requisite
+
+```bash
+mkdir  <direcory-name>
+cdk init sample-app --language typescript
+```
+This provide sample CDK project structure (as below) to get started . 
+
+![image info](./screenshot/sample-cdk-project.png)
+
+- Option 2 
 Clone repository and change to project directory
 
 ```bash
@@ -48,10 +60,19 @@ cd aws-cdk-event-driven-architecture
 - S3
 - Systems parameter
 
-### Code / Configuration update for Stage 1
+### Code / Configuration update for Stage 1 
 
-- Go to the lib/lambda-iam-stack.ts file which you created initially.
+Considering you choose option 1 of modifying/updating code using base/sample project
+
+- Typescript file under lib folder
+  lib/sample-cdk-project-stack.ts is where your CDK application’s stack is defined. 
+
+- Delete the existing sample-cdk-project-stack.ts as we will be creating new file based on requirements.
+
+- Go to the lib and create lambda-iam-stack.ts file which is the same file if you would have clone this repo directly
 - Below is the reference code to create lambda and it's IAM permissions using CDK.
+- file lambda-iam-stack.ts
+
 ```
 import * as cdk from 'aws-cdk-lib';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
@@ -101,8 +122,15 @@ export class LambdaIamStack extends cdk.Stack {
   }
 }
 ```
+
+Typescript file under bin folder is the entrypoint of the CDK application. It will load the stack we are defining
+
+- Sample  bin/cdk-workshop.ts
+![image info](./screenshot/sample-project-bin.ts.png)
+
 - Next is to update the main app and create the LambdaIamStack so that it invokes the stack we create above.
-- Add below code to bin/pe-dojo-app.ts
+- Update with below code. Add below code to bin/pe-dojo-app.ts
+
 ```
 const sharedStack = new LambdaIamStack(app, 'LambdaIamStack', {
   description: "Creates lambda function and IAM role and stores lambda arn into SSM"
@@ -143,7 +171,7 @@ Go to AWS console and check if the cloudformation stack is successfully deployed
 
 ## Setting up Stage 2 — Creating S3 bucket
 
-The architecture diagram you saw above is divided into four stages. Each stage we deploy certain AWS services/components of our architecture.
+The architecture diagram you saw above is divided into three stages. Each stage we deploy certain AWS services/components of our architecture.
 Services under each stage will be deployed through respective CDK stack or added in the existing stack.
 `Note: CDK Stack creates AWS CloudFormation Stack for it's underlying infrastructure.`
 
@@ -153,7 +181,10 @@ Services under each stage will be deployed through respective CDK stack or added
 - SSM parameter for storing config.
 
 ### Code / Configuration for stage 2 
-This will create s3 bucket and first stack with AWS CDK
+This will create s3 bucket and second stack with AWS CDK 
+
+create s3-bucket.ts file - This is for CDK resouces for stage2 of our architecture 
+
 ```
 import {CfnOutput } from 'aws-cdk-lib';
 import * as cdk from 'aws-cdk-lib'
@@ -205,6 +236,25 @@ export class AppS3Stack extends cdk.Stack {
     });
   }
 }
+``` 
+
+Typescript file under bin folder is the entrypoint of the CDK application. As we add new stack under we need to go back and the file
+
+Here is the update adding import as well
+
+```
+
+#!/usr/bin/env node
+import * as cdk from 'aws-cdk-lib';
+import { AppS3Stack} from '../lib/s3-bucket';
+import 'source-map-support/register';
+import { LambdaIamStack } from '../lib/lambda-iam-stack';
+
+new AppS3Stack(app, 'AppS3Stack', {
+  description: "CDK Stack for S3 bucket creation and parameter store",
+  lambdaFunction: basic_lambda_stack.lambdaFunction
+})
+
 ```
 
 ### Bootstrapping
