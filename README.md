@@ -57,7 +57,6 @@ cd aws-cdk-event-driven-architecture
 
 - Lambda
 - IAM
-- S3
 - Systems parameter
 
 ### Code / Configuration update for Stage 1 
@@ -132,10 +131,32 @@ Typescript file under bin folder is the entrypoint of the CDK application. It wi
 - Update with below code. Add below code to bin/pe-dojo-app.ts
 
 ```
+import * as cdk from 'aws-cdk-lib';
+import { LambdaIamStack } from '../lib/lambda-iam-stack';
+
+const app = new cdk.App();
 const sharedStack = new LambdaIamStack(app, 'LambdaIamStack', {
   description: "Creates lambda function and IAM role and stores lambda arn into SSM"
 });
 ```
+
+### Bootstrapping
+Bootstrapping is the process of provisioning resources for the AWS CDK before you can deploy AWS CDK apps into an AWS environment (which is a combination of AWS account & region)
+
+CDK bootstrap deploy  "CDKToolkit" Stack. This stack includes resources that are used in the toolkitâ€™s operation. For example, the stack includes an S3 bucket that is used to store templates and assets during the deployment process.
+
+Use cdk bootstrap command to bootstrap one or more AWS environments. 
+```sh
+cdk bootstrap aws://ACCOUNT-NUMBER-1/REGION-1
+```
+
+In case AWS PROFILE is defined
+```
+cdk bootstrap --profile <name of your AWS profile>
+```
+
+validate the CDK bootstrap resources details by checking the CDKToolkit stack using AWS Console
+![image info](./screenshot/cdk-toolkit-stage1.png) 
 
 ### Steps to deploy / Provision resources for Stage 1
 
@@ -161,7 +182,6 @@ cdk deploy <stack name> -r <your role arn>
 
 Go to AWS console and check if the cloudformation stack is successfully deployed, Also check if all the resources which we expect to create are created successfully.
 - Lambda
-- S3
 - IAM permissions for lambda
 
 ![image info](./screenshot/lambda-stack-stage2.png)
@@ -256,24 +276,6 @@ new AppS3Stack(app, 'AppS3Stack', {
 })
 
 ```
-
-### Bootstrapping
-Bootstrapping is the process of provisioning resources for the AWS CDK before you can deploy AWS CDK apps into an AWS environment (which is a combination of AWS account & region)
-
-CDK bootstrap deploy  "CDKToolkit" Stack. This stack includes resources that are used in the toolkitâ€™s operation. For example, the stack includes an S3 bucket that is used to store templates and assets during the deployment process.
-
-Use cdk bootstrap command to bootstrap one or more AWS environments. 
-```sh
-cdk bootstrap aws://ACCOUNT-NUMBER-1/REGION-1
-```
-
-In case AWS PROFILE is defined
-```
-cdk bootstrap --profile <name of your AWS profile>
-```
-
-validate the CDK bootstrap resources details by checking the CDKToolkit stack using AWS Console
-![image info](./screenshot/cdk-toolkit-stage1.png) 
 
 ### Steps to deploy / Provision resources for Stage 2
 
